@@ -10,28 +10,54 @@ import java.util.Map;
  */
 public class TimeSeries<T> {
 
-
+    // The metric. Name of the data that is being stored.
     private String mMetric;
 
+    // The ID of the device that recorded the data. May be null or empty if the data comes from
+    // multiple devices.
     private String mDeviceID;
 
+    // The tag list. Tags are added to all data points in the time series. When querying the TSDB,
+    // you can filter the data for those tags.
     private Map<String, String> mTags;
 
+    // The list of all data points in the time series.
     private List<DataPoint> mDataPoints;
 
+    /**
+     * Creates a new time series.
+     * @param metric The metric. Name of the data that is being stored.
+     * @param deviceID The ID of the device that recorded the data. May be null or empty if the
+     *                 data comes from multiple devices.
+     */
     public TimeSeries(String metric, String deviceID) {
         mMetric = metric;
 
-        if (mDeviceID != null)
+        if (deviceID != null && !(deviceID.equals("")))
             mDeviceID = deviceID;
         else
-            mDeviceID = "";
+            mDeviceID = "*";
 
         mTags = new HashMap<String, String>();
         mDataPoints = new ArrayList<DataPoint>();
     }
 
+    /**
+     * Add data point to time series.
+     * @param timestamp The timestamp of the new data point.
+     * @param value The value of the new data point.
+     */
     public void addDataPoint(long timestamp, T value) {
+        DataPoint<T> newDataPoint = new DataPoint<T>(timestamp, value);
+        mDataPoints.add(newDataPoint);
+    }
+
+    /**
+     * Add data point to time series. Timestamp is "now".
+     * @param value The value of the new data point.
+     */
+    public void addDataPoint(T value) {
+        long timestamp = System.currentTimeMillis() / 1000;
         DataPoint<T> newDataPoint = new DataPoint<T>(timestamp, value);
         mDataPoints.add(newDataPoint);
     }
@@ -92,5 +118,37 @@ public class TimeSeries<T> {
      */
     public void addTag(String key, boolean value) {
         addTag(key, Boolean.valueOf(value));
+    }
+
+    /**
+     * Getter for the metric of the time series.
+     * @return the metric of the time series.
+     */
+    public String getMetric() {
+        return mMetric;
+    }
+
+    /**
+     * Getter for the device ID of the time series.
+     * @return the device ID of the time series.
+     */
+    public String getDeviceID() {
+        return mDeviceID;
+    }
+
+    /**
+     * Getter for the data points of the time series.
+     * @return the data point list of the time series.
+     */
+    public List<DataPoint> getDataPoints() {
+        return mDataPoints;
+    }
+
+    /**
+     * Getter for the tags of the time series.
+     * @return the tag hash map of the time series.
+     */
+    public Map<String, String> getTags() {
+        return mTags;
     }
 }
