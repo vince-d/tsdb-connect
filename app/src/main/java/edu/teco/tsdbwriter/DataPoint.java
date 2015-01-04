@@ -7,5 +7,5 @@ package edu.teco.tsdbwriter;
 // A single data point in a time series.
 public class DataPoint {
 
-    private
+    private String value;
 }
