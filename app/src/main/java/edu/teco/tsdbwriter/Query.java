@@ -1,5 +1,7 @@
 package edu.teco.tsdbwriter;
 
+// Author: Vincent Diener  -  diener@teco.edu
+
 /**
  * A query to the TSDB.
  */

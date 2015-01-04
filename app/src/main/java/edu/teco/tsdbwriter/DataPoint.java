@@ -1,9 +1,6 @@
 package edu.teco.tsdbwriter;
 
-/**
- * Created by Vincent on 04.01.2015.
- */
-
+// Author: Vincent Diener  -  diener@teco.edu
 
 /**
  * A single data point in a time series.

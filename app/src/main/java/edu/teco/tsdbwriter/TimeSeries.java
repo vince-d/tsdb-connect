@@ -1,12 +1,16 @@
 package edu.teco.tsdbwriter;
 
+// Author: Vincent Diener  -  diener@teco.edu
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Created by Vincent on 04.01.2015.
+ * This class represents a time series.
+ * @param <T> The type of the data in the series. Data will be saved as key-value pairs, where the
+ *            key is a string and the value is a T.
  */
 public class TimeSeries<T> {
 

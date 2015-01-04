@@ -1,5 +1,7 @@
 package edu.teco.tsdbwriter;
 
+// Author: Vincent Diener  -  diener@teco.edu
+
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -23,7 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by Vincent on 04.01.2015.
+ * This class represents the TSDB.
+ * It is used to write data to and query data from the TSDB.
  */
 public class TSDB {
 
@@ -33,86 +36,80 @@ public class TSDB {
     // The URL for querying data from the TSDB
     private String mQueryURL;
 
+    /**
+     * Creates the TSDB.
+     * @param writeURL The base URL for writing data.
+     * @param queryURL The base URL for querying data.
+     */
     public TSDB(String writeURL, String queryURL) {
         mWriteURL = writeURL;
         mQueryURL = queryURL;
     }
 
+    /**
+     * Write all data points from time series to TSDB.
+     * @param timeSeries The time series to write.
+     */
     public void write(TimeSeries timeSeries) {
         // Start async task.
         PutIntoTSDBTask tsdbWrite = new PutIntoTSDBTask();
         tsdbWrite.execute(timeSeries);
     }
 
+    /**
+     * Query the TSDB with the given query.
+     * @param query The query.
+     */
     public void query(Query query) {
         QueryTSDBTask tsdbRead = new QueryTSDBTask();
         tsdbRead.execute(query);
     }
 
-    // Needed for logging.
-    private String convertStreamToString(InputStream is) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        StringBuilder sb = new StringBuilder();
-
-        String line = null;
-        try {
-            while ((line = reader.readLine()) != null) {
-                sb.append(line + "\n");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                is.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return sb.toString();
-    }
-
-
+    /**
+     * Async Task that writes all data points to the TSDB.
+     */
     private class PutIntoTSDBTask extends AsyncTask<TimeSeries, String, String> {
-
 
         @Override
         protected String doInBackground(TimeSeries... timeSeries) {
 
+            // Get all data points from time series.
             List<DataPoint> dataPoints = timeSeries[0].getDataPoints();
 
-            // Write all the data.
+            // Write all the data points.
             for (DataPoint dp : dataPoints) {
                 String result = putJsonAndGetResult(timeSeries[0], dp);
+
+                // Call onProgressUpdate with result of last PUT.
                 publishProgress(result);
             }
 
-            return "All PUTs done";
+            return "Writing all done.";
         }
 
         @Override
         protected void onProgressUpdate(String... result) {
             super.onProgressUpdate(result);
+            Log.d(MainActivity.TAG, "PUT done. Result: " + result[0]);
+        }
 
-            Log.d(MainActivity.TAG, "JSON PUT done: " + result[0]);
+        @Override
+        protected void onPostExecute(String result) {
+            Log.d(MainActivity.TAG, result);
         }
 
         private String putJsonAndGetResult(TimeSeries ts, DataPoint dp) {
-            InputStream inputStream = null;
+
+
             String result = "";
-
-
             HttpClient httpclient = new DefaultHttpClient();
-
-            // ID of bPart. Can be anything, but MAC address might be a good idea.
-            // The server puts this to the tag "resource_id".
-            // This means you can easily filter your time series for a certain metric by this ID if
-            // you only want to get the data supplied by this bPart.
-
+            InputStream inputStream = null;
 
             // Put together URL.
             HttpPut httpPUT = new HttpPut(mWriteURL + ts.getDeviceID() + "/");
 
 
+            // Create JSON object.
             JSONObject main = new JSONObject();
             JSONObject metric = new JSONObject();
             JSONObject tags = new JSONObject();
@@ -145,16 +142,20 @@ public class TSDB {
                 main.put("stime", dp.getTimestamp());
 
                 // Put device ID.
-                // This is written as value for the tag "resource_id"
+                // This is written as value for the tag "resource_id". It is also optional.
                 main.put("id", ts.getDeviceID());
+
             } catch (JSONException e) {
                 Log.e(MainActivity.TAG, "Malformed JSON.");
             }
 
+            // Get JSON string representation.
             String json;
             json = main.toString();
 
-            Log.d(MainActivity.TAG, json);
+            // Log URL and JSON.
+            Log.d(MainActivity.TAG, "Writing: " + json);
+            Log.d(MainActivity.TAG, "To: " + httpPUT.getURI());
 
             try {
                 // PUT data to server and read response.
@@ -174,91 +175,82 @@ public class TSDB {
                 Log.d("InputStream", e.getLocalizedMessage());
             }
 
+            // Return result. It is then printed to logcat.
             return result;
         }
 
-        /** The system calls this to perform work in the UI thread and delivers
-         * the result from doInBackground() */
-        protected void onPostExecute(String result) {
-            Log.d(MainActivity.TAG, result);
-        }
     }
 
-
+    /**
+     * Async Task that queries data from the TSDB.
+     */
     private class QueryTSDBTask extends AsyncTask<Query, String, String> {
 
 
         @Override
         protected String doInBackground(Query... query) {
-
+            // Start query and return the result, a JSON string.
             String result = queryStringOverHttpGet(query[0]);
-
-
             return result;
         }
 
         @Override
-        protected void onProgressUpdate(String... result) {
-            super.onProgressUpdate(result);
-
-            Log.d(MainActivity.TAG, "JSON PUT done: " + result[0]);
+        protected void onPostExecute(String result) {
+            Log.d(MainActivity.TAG, "Query result: " + result);
         }
 
         private String queryStringOverHttpGet(Query query) {
+
+            HttpClient httpclient = new DefaultHttpClient();
             InputStream inputStream = null;
             String result = "";
 
-
-            HttpClient httpclient = new DefaultHttpClient();
-
-            // http://cumulus.teco.edu:4242/api/query?start=22m-ago&end=1s-ago&m=avg:MyCoolMetric{SomeOtherTag=SomeOtherValue,SomeTag=SomeValue,resource_id=MyDevice}
             // Put together URL.
-            String base = mQueryURL + "?";
-            base += "start=" + query.getStart() + "&";
-            base += "end=" + query.getEnd() + "&";
-            base += "m=" + query.getAggregator() + ":";
+            String URL = mQueryURL + "?";
+            URL += "start=" + query.getStart() + "&";
+            URL += "end=" + query.getEnd() + "&";
+            URL += "m=" + query.getAggregator() + ":";
 
             // Only add downsampler if it is not null or empty.
             if ((!(query.getDownsampler() != null)) && (!query.getDownsampler().equals("")))
-                base += query.getDownsampler() + ":";
+                URL += query.getDownsampler() + ":";
 
-            base += query.getTimeSeries().getMetric();
+            URL += query.getTimeSeries().getMetric();
             try {
                 // Put tags.
                 // Those are optional and can be used to filter the data when placing a query.
-                base += URLEncoder.encode("{", "UTF8");
+                URL += URLEncoder.encode("{", "UTF8");
 
                 // Put device tag ("resource_id") if it was set.
                 String deviceID = query.getTimeSeries().getDeviceID();
                 if (!deviceID.equals(""))
-                    base += URLEncoder.encode("resource_id" + "=" + deviceID, "UTF8");
+                    URL += URLEncoder.encode("resource_id" + "=" + deviceID, "UTF8");
 
                 Map mp = query.getTimeSeries().getTags();
                 Iterator it = mp.entrySet().iterator();
 
                 if (it.hasNext() && !deviceID.equals(""))
-                    base += URLEncoder.encode(",", "UTF8");
+                    URL += URLEncoder.encode(",", "UTF8");
 
                 while (it.hasNext()) {
                     Map.Entry pairs = (Map.Entry)it.next();
-                    base += URLEncoder.encode(pairs.getKey().toString() + "=" + pairs.getValue().toString(), "UTF8");
+                    URL += URLEncoder.encode(pairs.getKey().toString() + "=" + pairs.getValue().toString(), "UTF8");
                     if (it.hasNext())
-                        base += URLEncoder.encode(",", "UTF8");
+                        URL += URLEncoder.encode(",", "UTF8");
                 }
 
-                base += URLEncoder.encode("}", "UTF8");
+                URL += URLEncoder.encode("}", "UTF8");
 
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
 
-            Log.d(MainActivity.TAG, base);
-            HttpGet httpGET = new HttpGet(base);
-
+            // The string is done. Print it.
+            Log.d(MainActivity.TAG, "URL String query: " + URL);
 
             try {
-                // Start GET request and return data.
-
+                // Start HTTP GET request and return data.
+                HttpGet httpGET = new HttpGet(URL);
                 HttpResponse httpResponse = httpclient.execute(httpGET);
                 inputStream = httpResponse.getEntity().getContent();
 
@@ -272,13 +264,33 @@ public class TSDB {
                 Log.d("InputStream", e.getLocalizedMessage());
             }
 
+            // Return the data the query has returned. It should be a JSON string that can now be
+            // parsed. TODO: Implement this. Maybe in onPostExecute.
             return result;
         }
 
-        /** The system calls this to perform work in the UI thread and delivers
-         * the result from doInBackground() */
-        protected void onPostExecute(String result) {
-            Log.d(MainActivity.TAG, result);
-        }
     }
+
+    // Needed for logging.
+    private String convertStreamToString(InputStream is) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line + "\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return sb.toString();
+    }
+
 }
