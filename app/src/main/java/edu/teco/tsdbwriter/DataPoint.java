@@ -5,11 +5,17 @@ package edu.teco.tsdbwriter;
  */
 
 
-
 /**
  * A single data point in a time series.
  */
-public class DataPoint {
+public class DataPoint<T>{
 
-    private String value;
+    private String mValue;
+
+    private String mTimestamp;
+
+    public DataPoint(long timestamp, T value) {
+        mValue = value.toString();
+        mTimestamp = String.valueOf(timestamp);
+    }
 }
