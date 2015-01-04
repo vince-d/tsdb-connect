@@ -13,8 +13,8 @@ public class MainActivity extends ActionBarActivity {
         super.onResume();
 
         // Base URLs for writing and reading data to the TSDB.
-        String writeURL = "http://cumulus.teco.edu:52001/data/";
-        String queryURL = "http://cumulus.teco.edu:4242/api/query";
+        String writeURL = "<WRITE URL GOES HERE>";
+        String queryURL = "<READ URL GOES HERE>";
 
         // Create TSDB object.
         TSDB tsdb = new TSDB(writeURL, queryURL);
@@ -39,12 +39,6 @@ public class MainActivity extends ActionBarActivity {
 
         // Write all the data to the TSDB.
         tsdb.write(timeSeries);
-
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
         // Next, we want to read the data we just wrote.
 
