@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/TSDBWriter.iml" filepath="$PROJECT_DIR$/TSDBWriter.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tsdb-connect.iml" filepath="$PROJECT_DIR$/tsdb-connect.iml" />
     </modules>
   </component>
 </project>
