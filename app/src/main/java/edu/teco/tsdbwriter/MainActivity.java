@@ -5,7 +5,7 @@ import android.support.v7.app.ActionBarActivity;
 
 public class MainActivity extends ActionBarActivity {
 
-    public static final String TAG = "TSDBWriter";
+    public static final String TAG = "TSDBWriterLog";
 
     @Override
     protected void onResume() {
@@ -29,9 +29,9 @@ public class MainActivity extends ActionBarActivity {
 
         timeSeries.addDataPoint(currentTime + 0, 1.0);
         timeSeries.addDataPoint(currentTime + 1,2.0);
-        timeSeries.addDataPoint(currentTime + 2, 3.0);
-        timeSeries.addDataPoint(currentTime + 3, 4.0);
-        timeSeries.addDataPoint(currentTime + 4, 5.0);
+        //timeSeries.addDataPoint(currentTime + 2, 3.0);
+        //timeSeries.addDataPoint(currentTime + 3, 4.0);
+        //timeSeries.addDataPoint(currentTime + 4, 5.0);
         timeSeries.addTag("SomeTag", "SomeValue");
         timeSeries.addTag("SomeOtherTag", "SomeOtherValue");
 
@@ -45,7 +45,7 @@ public class MainActivity extends ActionBarActivity {
         // The value of "SomeOtherTag" is ignored in the query.
         newTimeSeries.addTag("SomeTag", "SomeValue");
 
-        Query query = new Query(timeSeries, "1m-ago", "now", "avg", null);
+        Query query = new Query(timeSeries, "5m-ago", String.valueOf(currentTime + 30), "avg", null);
 
         // See documentation of Query.java for explanation of parameters.
         tsdb.query(query);

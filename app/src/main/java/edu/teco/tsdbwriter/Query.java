@@ -9,7 +9,7 @@ public class Query {
     // the query to the time series database.
     private TimeSeries mTimeSeries;
 
-    // Start and end can be timestamps or strings like "now", "10m-ago", "3d-ago", "53s-ago", etc.
+    // Start and end can be timestamps or strings like "10m-ago", "3d-ago", "53s-ago", etc.
     private String mStart;
     private String mEnd;
 

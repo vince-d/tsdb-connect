@@ -36,7 +36,7 @@ public class TimeSeries<T> {
         if (deviceID != null && !(deviceID.equals("")))
             mDeviceID = deviceID;
         else
-            mDeviceID = "*";
+            mDeviceID = "";
 
         mTags = new HashMap<String, String>();
         mDataPoints = new ArrayList<DataPoint>();

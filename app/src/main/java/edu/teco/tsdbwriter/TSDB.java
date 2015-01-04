@@ -154,7 +154,7 @@ public class TSDB {
             String json;
             json = main.toString();
 
-            Log.d("JSONSent", json);
+            Log.d(MainActivity.TAG, json);
 
             try {
                 // PUT data to server and read response.
@@ -204,30 +204,60 @@ public class TSDB {
             Log.d(MainActivity.TAG, "JSON PUT done: " + result[0]);
         }
 
-        private String queryStringOverHttpGet(Query q) {
+        private String queryStringOverHttpGet(Query query) {
             InputStream inputStream = null;
             String result = "";
 
 
             HttpClient httpclient = new DefaultHttpClient();
 
+            // http://cumulus.teco.edu:4242/api/query?start=22m-ago&end=1s-ago&m=avg:MyCoolMetric{SomeOtherTag=SomeOtherValue,SomeTag=SomeValue,resource_id=MyDevice}
             // Put together URL.
-            String base = "http://cumulus.teco.edu:4242/api/query?";
-            base += "start=10h-ago" + "&";
-            base += "end=1s-ago" + "&";
-            base += "m=sum:SomeData";
+            String base = mQueryURL + "?";
+            base += "start=" + query.getStart() + "&";
+            base += "end=" + query.getEnd() + "&";
+            base += "m=" + query.getAggregator() + ":";
 
+            // Only add downsampler if it is not null or empty.
+            if ((!(query.getDownsampler() != null)) && (!query.getDownsampler().equals("")))
+                base += query.getDownsampler() + ":";
+
+            base += query.getTimeSeries().getMetric();
             try {
-                base += URLEncoder.encode("{unit=degrees,resource_id=MyDeviceID2,cats=*}", "UTF8");
+                // Put tags.
+                // Those are optional and can be used to filter the data when placing a query.
+                base += URLEncoder.encode("{", "UTF8");
+
+                // Put device tag ("resource_id") if it was set.
+                String deviceID = query.getTimeSeries().getDeviceID();
+                if (!deviceID.equals(""))
+                    base += URLEncoder.encode("resource_id" + "=" + deviceID, "UTF8");
+
+                Map mp = query.getTimeSeries().getTags();
+                Iterator it = mp.entrySet().iterator();
+
+                if (it.hasNext() && !deviceID.equals(""))
+                    base += URLEncoder.encode(",", "UTF8");
+
+                while (it.hasNext()) {
+                    Map.Entry pairs = (Map.Entry)it.next();
+                    base += URLEncoder.encode(pairs.getKey().toString() + "=" + pairs.getValue().toString(), "UTF8");
+                    if (it.hasNext())
+                        base += URLEncoder.encode(",", "UTF8");
+                }
+
+                base += URLEncoder.encode("}", "UTF8");
+
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
 
+            Log.d(MainActivity.TAG, base);
             HttpGet httpGET = new HttpGet(base);
 
 
             try {
-                // PUT data to server and read response.
+                // Start GET request and return data.
 
                 HttpResponse httpResponse = httpclient.execute(httpGET);
                 inputStream = httpResponse.getEntity().getContent();
